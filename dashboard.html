@@ -90,6 +90,9 @@ tr:hover td{background:rgba(200,169,110,.03);}
 .badge.grade1{background:#e8f4ff;color:var(--primary-dark);}
 .badge.grade2{background:#fff8e8;color:#e67e22;}
 .badge.grade3{background:#fce8ff;color:#8e44ad;}
+.badge.gradep1{background:#e8fff3;color:#1ea760;}
+.badge.gradep2{background:#fff0e8;color:#d2691e;}
+.badge.gradep3{background:#eee8ff;color:#5b4bc4;}
 .action-btns{display:flex;gap:6px;}
 .btn-view{background:#e8f4ff;color:var(--primary);border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Tajawal',sans-serif;font-weight:600;}
 .quiz-preview-list{display:flex;flex-direction:column;gap:16px;max-height:55vh;overflow-y:auto;padding-left:4px;}
@@ -512,17 +515,12 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
   font-family: 'Cairo', sans-serif !important;
 }
 </style>
-<!-- ================================================================
-     DATABASE CONNECTION — DISCONNECTED
-     Separated from the previous Firebase project/config.
-     To connect a NEW database: add the new config to firebase-config.js
-     and uncomment the lines below.
-     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
-     <script src="firebase-config.js"></script>
-================================================================= -->
+<!-- ===== Firebase (live database — courses, students, quizzes, payments) ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script src="grade-mapping.js"></script>
 <style id="grade-cards-redesign">
 /* ═══════════════════════════════════════════════════════════════
@@ -811,6 +809,63 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
 </head>
 <body>
 
+<style>
+  body.admin-gate-locked { overflow:hidden !important; }
+</style>
+
+<!-- ===== ADMIN PASSWORD GATE (protects direct URL access too) ===== -->
+<div id="dashGateOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:#0b1220;align-items:center;justify-content:center;">
+  <div style="background:#111827;border:1px solid #1e293b;border-radius:16px;padding:30px;max-width:340px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.5);text-align:center;">
+    <div style="font-size:36px;margin-bottom:10px;">🦂</div>
+    <div style="font-weight:800;color:#e2e8f0;font-size:17px;margin-bottom:4px;">لوحة التحكم</div>
+    <div style="color:#94a3b8;font-size:13px;margin-bottom:18px;">أدخل كلمة المرور للدخول</div>
+    <input type="password" id="dashGatePass" placeholder="Password" autocomplete="off" style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:10px;border:1px solid #1e293b;background:#0b1220;color:#e2e8f0;font-size:15px;margin-bottom:10px;outline:none;">
+    <div id="dashGateError" style="color:#ff4757;font-size:12.5px;min-height:16px;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:8px;">
+      <a href="index.html" style="flex:1;padding:10px;border-radius:10px;border:1px solid #1e293b;background:transparent;color:#94a3b8;font-weight:600;cursor:pointer;text-decoration:none;display:block;">Back</a>
+      <button onclick="submitDashGate()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#eab308;color:#0b1220;font-weight:700;cursor:pointer;">Enter</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Blocks direct navigation to dashboard.html without the admin password,
+  // even if the visitor bypasses the hidden footer link on the main site.
+  (function () {
+    const ADMIN_GATE_PASSWORD = '2025';
+    const ADMIN_SESSION_KEY = 'scorpion_admin_ok';
+    let unlocked = false;
+    try { unlocked = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true'; } catch (e) {}
+
+    if (!unlocked) {
+      document.documentElement.style.visibility = 'hidden';
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('admin-gate-locked');
+        const overlay = document.getElementById('dashGateOverlay');
+        overlay.style.display = 'flex';
+        document.documentElement.style.visibility = 'visible';
+        const input = document.getElementById('dashGatePass');
+        setTimeout(() => input.focus(), 50);
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitDashGate(); });
+      });
+    }
+
+    window.submitDashGate = function () {
+      const input = document.getElementById('dashGatePass');
+      const err = document.getElementById('dashGateError');
+      if (input.value === ADMIN_GATE_PASSWORD) {
+        try { sessionStorage.setItem(ADMIN_SESSION_KEY, 'true'); } catch (e) {}
+        document.getElementById('dashGateOverlay').style.display = 'none';
+        document.body.classList.remove('admin-gate-locked');
+      } else {
+        err.textContent = 'كلمة المرور غير صحيحة';
+        input.value = '';
+        input.focus();
+      }
+    };
+  })();
+</script>
+
 <div id="notificationContainer" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;"></div>
 
 <!-- SIDEBAR -->
@@ -997,7 +1052,7 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
             <button onclick="syncPlatformStudents()" style="background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;padding:9px 16px;border-radius:10px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px">🔄 تحديث</button>
           </div>
         </div>
-        <div id="studentsGradeSummary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 24px 18px"></div>
+        <div id="studentsGradeSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:0 24px 18px"></div>
         <div id="studentsBulkWhatsappBar" style="display:none;align-items:center;gap:10px;margin:0 24px 14px;padding:10px 16px;background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.3);border-radius:12px">
           <span style="font-weight:700;font-size:13.5px;color:var(--text)"><span id="studentsSelectedCount">0</span> طالب محدد</span>
           <button onclick="sendBulkWhatsApp()" style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:8px 16px;border-radius:10px;font-family:'Tajawal',sans-serif;font-weight:700;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:6px">📲 إرسال واتساب للمحددين</button>
@@ -1175,6 +1230,9 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
                 <div class="form-group">
                   <label>الصف الدراسي</label>
                   <select id="aiQuizGrade">
+                    <option value="prep1">الأول الإعدادي</option>
+                    <option value="prep2">الثاني الإعدادي</option>
+                    <option value="prep3">الثالث الإعدادي</option>
                     <option value="1">الأول الثانوي</option>
                     <option value="2">الثاني الثانوي</option>
                     <option value="3">الثالث الثانوي</option>
@@ -1442,6 +1500,9 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
                 <label>الصف الدراسي</label>
                 <select id="vcGrade" onchange="populateVoucherCourses();toggleGenType()" style="padding:12px 14px;border:2px solid var(--border);border-radius:10px;width:100%;font-family:'Tajawal',sans-serif;font-size:14px;background:var(--bg);color:var(--text);outline:none">
                   <option value="">اختر الصف الدراسي</option>
+                  <option value="prep1">الصف الأول الإعدادي</option>
+                  <option value="prep2">الصف الثاني الإعدادي</option>
+                  <option value="prep3">الصف الثالث الإعدادي</option>
                   <option value="1">الصف الأول الثانوي</option>
                   <option value="2">الصف الثاني الثانوي</option>
                   <option value="3">الصف الثالث الثانوي</option>
@@ -1516,6 +1577,9 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
               </select>
               <select id="vcFilterGrade" onchange="renderVouchersTable()" style="padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:'Tajawal',sans-serif;font-size:14px;background:var(--bg);color:var(--text);outline:none">
                 <option value="">كل الصفوف</option>
+                <option value="prep1">أول إعدادي</option>
+                <option value="prep2">تاني إعدادي</option>
+                <option value="prep3">تالت إعدادي</option>
                 <option value="1">أول ثانوي</option>
                 <option value="2">تاني ثانوي</option>
                 <option value="3">تالت ثانوي</option>
@@ -1558,6 +1622,9 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <select id="printGrade" onchange="renderPrintPreview()" style="padding:9px 14px;border:2px solid var(--border);border-radius:10px;font-family:'Tajawal',sans-serif;font-size:14px;background:var(--bg);color:var(--text);outline:none">
                 <option value="">كل الصفوف</option>
+                <option value="prep1">أول إعدادي</option>
+                <option value="prep2">تاني إعدادي</option>
+                <option value="prep3">تالت إعدادي</option>
                 <option value="1">أول ثانوي</option>
                 <option value="2">تاني ثانوي</option>
                 <option value="3">تالت ثانوي</option>
@@ -1919,6 +1986,9 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
       <div class="form-group">
         <label>الصف المستهدف</label>
         <select id="acGrade" onchange="updateCourseTrackVisibility()">
+          <option value="prep1">الصف الأول الإعدادي</option>
+          <option value="prep2">الصف الثاني الإعدادي</option>
+          <option value="prep3">الصف الثالث الإعدادي</option>
           <option value="1">الصف الأول الثانوي</option>
           <option value="2">الصف الثاني الثانوي</option>
           <option value="3">الصف الثالث الثانوي</option>
@@ -2109,6 +2179,9 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
       <div class="form-group">
         <label>الصف الدراسي</label>
         <select id="lecGrade">
+          <option value="prep1">الصف الأول الإعدادي</option>
+          <option value="prep2">الصف الثاني الإعدادي</option>
+          <option value="prep3">الصف الثالث الإعدادي</option>
           <option value="1">الصف الأول الثانوي</option>
           <option value="2">الصف الثاني الثانوي</option>
           <option value="3">الصف الثالث الثانوي</option>
@@ -2148,6 +2221,9 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
       <div class="form-group">
         <label>الصف الدراسي</label>
         <select id="aqGrade">
+          <option value="prep1">الصف الأول الإعدادي</option>
+          <option value="prep2">الصف الثاني الإعدادي</option>
+          <option value="prep3">الصف الثالث الإعدادي</option>
           <option value="1">الصف الأول الثانوي</option>
           <option value="2">الصف الثاني الثانوي</option>
           <option value="3">الصف الثالث الثانوي</option>
@@ -2203,6 +2279,9 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
         <input type="text" id="qbSearchInput" placeholder="ابحث في نص الأسئلة..." style="flex:1;" oninput="renderQuestionBankList()">
         <select id="qbGradeFilter" style="width:180px;" onchange="renderQuestionBankList()">
           <option value="">كل الصفوف</option>
+          <option value="prep1">الصف الأول الإعدادي</option>
+          <option value="prep2">الصف الثاني الإعدادي</option>
+          <option value="prep3">الصف الثالث الإعدادي</option>
           <option value="1">الصف الأول الثانوي</option>
           <option value="2">الصف الثاني الثانوي</option>
           <option value="3">الصف الثالث الثانوي</option>
@@ -2333,11 +2412,11 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
         <h3 id="viewQuizTitle" style="margin-bottom:10px;">معاينة الاختبار</h3>
         <div id="viewQuizMeta" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--text2);"></div>
       </div>
-      <button type="button" class="btn-cancel" onclick="closeViewQuizModal()" style="padding:8px 14px;min-width:auto;">✕</button>
+      <button type="button" class="btn-cancel" onclick="closeModal('viewQuizModal')" style="padding:8px 14px;min-width:auto;">✕</button>
     </div>
     <div id="viewQuizQuestions" class="quiz-preview-list"></div>
     <div class="modal-actions" style="margin-top:20px;">
-      <button type="button" class="btn-cancel" onclick="closeViewQuizModal()">إغلاق</button>
+      <button type="button" class="btn-cancel" onclick="closeModal('viewQuizModal')">إغلاق</button>
     </div>
   </div>
 </div>
@@ -2347,11 +2426,28 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
 var AI_QUIZ_TEXT_MAX = 28000;
 
 let currentUser = JSON.parse(localStorage.getItem('alamin_current'));
-// ── حماية الداشبورد: لازم يكون أدمن ──
-if (!currentUser || currentUser.role !== 'admin') {
-  // مش مسجّل دخول أو مش أدمن → ارجع لصفحة تسجيل الدخول
+
+// ── حماية الداشبورد ──
+// مدخل كلمة المرور (2025) في أسفل الموقع هو الحارس الوحيد للوحة التحكم الآن.
+// لو المستخدم فتح كلمة المرور صح (scorpion_admin_ok في sessionStorage)، يدخل
+// مباشرة من غير أي صفحة تسجيل دخول تانية — حتى لو مفيش حساب أدمن مسجّل دخول
+// فعليًا في localStorage. لو مفيش الفلاج ده *ولا* فيه حساب أدمن حقيقي مسجل
+// دخول، يرجع لصفحة تسجيل الدخول (حماية احتياطية لأي زيارة مباشرة قديمة).
+let _adminGateUnlocked = false;
+try { _adminGateUnlocked = sessionStorage.getItem('scorpion_admin_ok') === 'true'; } catch (e) {}
+
+if (!_adminGateUnlocked && (!currentUser || currentUser.role !== 'admin')) {
+  // مش داخل بكلمة مرور اللوحة ومش أدمن مسجّل دخول → ارجع لصفحة تسجيل الدخول
   window.location.replace('login.html');
   throw new Error('Unauthorized');
+}
+
+// دخل بكلمة مرور اللوحة لكن مفيش حساب أدمن حقيقي؟ اعمله حساب أدمن مؤقت
+// بالعرض بس (اسم افتراضي) عشان باقي الكود اللي بيقرأ currentUser.name يشتغل عادي.
+if (_adminGateUnlocked && (!currentUser || currentUser.role !== 'admin')) {
+  currentUser = currentUser || {};
+  currentUser.role = 'admin';
+  currentUser.name = currentUser.name || 'Mr. Fares Hany';
 }
 
 // ✅ تسجيل زيارة الداشبورد
@@ -2754,15 +2850,19 @@ if (!document.getElementById('dash-toast-style')) {
 if (typeof gradeLabel === 'undefined') {
   window.gradeLabel = function(g) {
     const m={'1':'أولى ثانوي','2':'ثانية ثانوي','3':'ثالثة ثانوي',
+             'prep1':'أولى إعدادي','prep2':'ثانية إعدادي','prep3':'ثالثة إعدادي',
              'all':'كل الصفوف'};
     return m[g]||g;
   };
 }
 if (typeof gradeClass === 'undefined') {
   window.gradeClass = function(g) {
-    // prep grades removed
-    return {1:'grade1','1':'grade1',2:'grade2','2':'grade2',3:'grade3','3':'grade3'}[g]||'grade1';
+    return {1:'grade1','1':'grade1',2:'grade2','2':'grade2',3:'grade3','3':'grade3',
+             prep1:'gradep1',prep2:'gradep2',prep3:'gradep3'}[g]||'grade1';
   };
+}
+if (typeof isSecondaryGrade === 'undefined') {
+  window.isSecondaryGrade = function(g) { return ['1','2','3'].includes(String(g)); };
 }
 function studentTypeLabel(type){return{'center':'طلاب السنتر','outside':'خارج السنتر','all':'كل الطلاب'}[type]||'غير محدد';}
 function getStudentType(user){return user.studentType||'outside';}
@@ -3325,6 +3425,9 @@ function renderStudentsGradeSummary(users){
   const trackFilter = getStudentsTrackFilter();
   const base = trackFilter === 'all' ? users : users.filter(u => (u.track||'') === trackFilter);
   const cards = [
+    ['prep1','الأول الإعدادي','#1ea760'],
+    ['prep2','الثاني الإعدادي','#d2691e'],
+    ['prep3','الثالث الإعدادي','#5b4bc4'],
     ['1','الأول الثانوي','#0284c7'],
     ['2','الثاني الثانوي','#f5a623'],
     ['3','الثالث الثانوي','#8e44ad']
@@ -5887,6 +5990,52 @@ async function deleteQuiz(id) {
   }
 }
 
+// Preview a quiz's questions/options/correct answers in a read-only modal.
+// (Wires up the "viewQuizModal" markup + quiz-preview-* styles that already
+// existed in the page but had no button opening them.)
+function openViewQuizModal(id) {
+  const quiz = quizzesData.find(q => String(q.id) === String(id));
+  if (!quiz) { showNotification('لم يتم العثور على الاختبار', 'error'); return; }
+
+  const titleEl = document.getElementById('viewQuizTitle');
+  const metaEl = document.getElementById('viewQuizMeta');
+  const listEl = document.getElementById('viewQuizQuestions');
+
+  titleEl.textContent = quiz.title || 'معاينة الاختبار';
+  metaEl.innerHTML = `
+    <span class="badge ${gradeClass(quiz.grade)}">${gradeLabel(quiz.grade)}</span>
+    <span>${escHtml(quiz.subject || 'عام')}</span>
+    <span>⏱ ${quiz.time || 0} دقيقة</span>
+    <span>${quiz.questionsCount || (quiz.questionsList || []).length} أسئلة</span>
+    <span>${quiz.totalPoints || 0} درجة</span>
+  `;
+
+  const questions = quiz.questionsList || [];
+  if (!questions.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text2);">⚠️ لا توجد أسئلة في هذا الاختبار.</div>';
+  } else {
+    listEl.innerHTML = questions.map((q, i) => `
+      <div class="quiz-preview-q">
+        <div class="quiz-preview-q-num">سؤال ${i + 1} — ${q.points || 1} درجة</div>
+        <div class="quiz-preview-q-text">${escHtml(q.q || '')}</div>
+        ${q.mediaUrl ? `<img src="${q.mediaUrl}" alt="" style="max-width:${q.imageWidth || 360}px;${q.imageHeight ? `height:${q.imageHeight}px;` : ''}border-radius:8px;margin-bottom:10px;">` : ''}
+        <ul class="quiz-preview-opts">
+          ${(q.opts || []).map((opt, oi) => `
+            <li class="${oi === Number(q.correctOpt) ? 'is-correct' : ''}">
+              <span class="opt-letter">${String.fromCharCode(65 + oi)}</span>
+              <span>${escHtml(opt)}</span>
+              ${oi === Number(q.correctOpt) ? '<span class="correct-tag">✓ الإجابة الصحيحة</span>' : ''}
+            </li>
+          `).join('')}
+        </ul>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('viewQuizModal').classList.add('open');
+}
+window.openViewQuizModal = openViewQuizModal;
+
 function renderQuizzesTable() {
   const tbody = document.getElementById('quizzesTableBody');
   if (!quizzesData.length) {
@@ -5903,6 +6052,7 @@ function renderQuizzesTable() {
       <td>
         <div class="action-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn-view" onclick="openAddQuizModal('${q.id}')" style="background:#8B6914;color:#fff;padding:6px 10px;border-radius:6px;">✏️ تعديل</button>
+          <button class="btn-view" onclick="openViewQuizModal('${q.id}')" style="background:var(--primary);color:#fff;padding:6px 10px;border-radius:6px;">👁️ معاينة</button>
           <button class="btn-view" onclick="duplicateQuiz('${q.id}')" style="background:var(--success);color:#fff;padding:6px 10px;border-radius:6px;">📥 نسخ</button>
           <button class="btn-view" onclick="openQuizDetailedResults('${q.id}')" style="background:#7c3aed;color:#fff;padding:6px 10px;border-radius:6px;">📊 النتائج</button>
           <button class="btn-delete" onclick="deleteQuiz('${q.id}')" style="padding:6px 10px;border-radius:6px;">🗑️ حذف</button>
@@ -7821,7 +7971,7 @@ if(currentUser && currentUser.role === 'student') {
       ? buildGradeOptions
       : function(sel, incAll) {
           const grades = [
-            
+            ['prep1','أولى إعدادي'],['prep2','ثانية إعدادي'],['prep3','ثالثة إعدادي'],
             ['1','أولى ثانوي'],['2','ثانية ثانوي'],['3','ثالثة ثانوي']
           ];
           let html = incAll ? '<option value="all">كل الصفوف</option>' : '<option value="">اختر الصف الدراسي</option>';

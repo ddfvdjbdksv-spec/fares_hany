@@ -4,15 +4,34 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Guest gate: run before anything paints, so a logged-out visitor never
+     sees a flash of course content before being sent to login. -->
+<script>
+(function(){
+  try {
+    var u = JSON.parse(localStorage.getItem('alamin_current') || 'null');
+    if (!u) {
+      var next = encodeURIComponent(location.pathname.split('/').pop() + location.search);
+      window.location.replace('login.html?next=' + next);
+    }
+  } catch(e) {}
+})();
+</script>
+
 <!-- SEO -->
-<title>كورسات اللغة العربية | شرح اللغة العربية للثانوية — Mr. Fares Hany</title>
-<meta name="description" content="شرح اللغة العربية للثانوية الأزهرية مع Mr. Fares Hany. كورسات منظمة لأولى وثانية وثالثة ثانوي بأسلوب مبسط واحترافي.">
-<meta name="keywords" content="كورسات اللغة العربية, شرح اللغة العربية للثانوية الأزهرية, دروس لغة عربية, Fares Hany, أولى ثانوي, ثانية ثانوي, ثالثة ثانوي">
+<title>كورسات اللغة الإنجليزية | Scorpion English Academy — Mr. Fares Hany</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#121212">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="description" content="شرح اللغة الإنجليزية مع Mr. Fares Hany — Scorpion English Academy. كورسات منظمة لأولى وثانية وثالثة ثانوي بأسلوب مبسط واحترافي.">
+<meta name="keywords" content="كورسات اللغة الإنجليزية, شرح انجليزي للثانوية العامة, دروس انجليزي, Scorpion English Academy, Fares Hany, أولى ثانوي, ثانية ثانوي, ثالثة ثانوي">
 <meta name="author" content="Mr. Fares Hany">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="lessons.html">
-<meta property="og:title" content="كورسات اللغة العربية | Mr. Fares Hany">
-<meta property="og:description" content="شرح اللغة العربية للثانوية الأزهرية — دروس منظمة لكل الصفوف الثانوية.">
+<meta property="og:title" content="كورسات اللغة الإنجليزية | Scorpion English Academy — Mr. Fares Hany">
+<meta property="og:description" content="شرح اللغة الإنجليزية — دروس منظمة لكل الصفوف الثانوية.">
 <meta property="og:url" content="lessons.html">
 <meta property="og:image" content="ايقونة الهدر.png">
 <meta property="og:type" content="website">
@@ -21,13 +40,13 @@
 {
   "@context": "https://schema.org",
   "@type": "ItemList",
-  "name": "كورسات اللغة العربية — Mr. Fares Hany",
-  "description": "قائمة كورسات شرح اللغة العربية للثانوية الأزهرية",
+  "name": "كورسات اللغة الإنجليزية — Scorpion English Academy",
+  "description": "قائمة كورسات شرح اللغة الإنجليزية للثانوية العامة",
   "url": "lessons.html",
   "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "اللغة العربية أولى ثانوي" },
-    { "@type": "ListItem", "position": 2, "name": "اللغة العربية ثانية ثانوي" },
-    { "@type": "ListItem", "position": 3, "name": "اللغة العربية ثالثة ثانوي" }
+    { "@type": "ListItem", "position": 1, "name": "اللغة الإنجليزية أولى ثانوي" },
+    { "@type": "ListItem", "position": 2, "name": "اللغة الإنجليزية ثانية ثانوي" },
+    { "@type": "ListItem", "position": 3, "name": "اللغة الإنجليزية ثالثة ثانوي" }
   ]
 }
 </script>
@@ -1215,13 +1234,12 @@ body, .sidebar-logo-text, .topbar-title, .stat-val, .table-search input,
 }
 </style>
 
-<!-- ================================================================
-     DATABASE CONNECTION — DISCONNECTED
-     Separated from the previous Firebase project/config.
-     To connect a NEW database: add the new config to firebase-config.js
-     and uncomment the line below.
-     <script src="firebase-config.js"></script>
-================================================================= -->
+<!-- ===== Firebase (live database — courses, students, quizzes, payments) ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script src="session-guard.js"></script>
 <style id="grade-cards-redesign">
 /* ═══════════════════════════════════════════════════════════════
@@ -3603,6 +3621,12 @@ window.addEventListener('load', async ()=>{
     if (e.key === 'Escape') window.closeDeveloperModal && window.closeDeveloperModal();
   });
 })();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>

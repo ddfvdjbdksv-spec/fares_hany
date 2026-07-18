@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=login.html?tab=register">
 <title>Redirecting...</title>
 </head>
 <body>
-<script>window.location.replace('login.html?tab=register');</script>
+<script>
+  const params = new URLSearchParams(location.search);
+  params.set('tab', 'register');
+  window.location.replace('login.html?' + params.toString());
+</script>
 <p>Redirecting to <a href="login.html?tab=register">Sign Up</a>...</p>
 </body>
 </html>
